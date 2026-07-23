@@ -6,23 +6,30 @@
 FROM continuumio/miniconda3
 
 # File Author / Maintainer
-MAINTAINER Jonathan Y. Hsu
+LABEL org.opencontainers.image.authors="Jonathan Y. Hsu"
+LABEL org.opencontainers.image.authors="Bérenger Dalle-Cort, berenger@42borgata.com"
 
-ENV SHELL bash
+ENV SHELL=bash
 
-#RUN conda install r-base
+# Add user and group docker:docker
+RUN groupadd -r docker && useradd -r -g docker -m -s /sbin/nologin docker
+
+# Configure conda channels
 RUN conda config --add channels defaults
 RUN conda config --add channels conda-forge
 RUN conda config --add channels bioconda
 
 # Update packages of the docker system
-RUN apt-get update && apt-get install gsl-bin libgsl0-dev -y && apt-get install libgomp1 -y && apt-get clean
+RUN apt-get update
+RUN apt-get install gsl-bin libgsl0-dev libgomp1 -y
+RUN apt-get clean
 
-# Install crispritz package (change the dafault version of python to 3.8)
-RUN conda update -n base -c defaults conda
-RUN conda install python=3.8 -y
-RUN conda install crispritz -y && conda clean --all -y
-RUN conda update crispritz -y
+# Install crispritz package
+RUN conda create -n crispritz python=3.8 -y
+RUN conda run -n crispritz conda install r-base -y
+RUN conda run -n crispritz conda install biopython -y
+RUN conda run -n crispritz conda install crispritz -y
+RUN conda run -n crispritz conda update crispritz -y
 
 # Add website dependencies
 RUN pip install dash==1.9.1  # Dash core
@@ -33,13 +40,13 @@ RUN pip install seqfold
 RUN pip install gunicorn
 RUN pip install biopython
 
-# Create environment
-COPY PrimeDesign /PrimeDesign
-#RUN mkdir /tmp/UPLOADS_FOLDER
-#RUN mkdir /tmp/RESULTS_FOLDER
+# Create environment structure
+WORKDIR /PrimeDesign
+COPY PrimeDesign .
+RUN chown -R docker:docker /PrimeDesign
+RUN chmod +x /PrimeDesign/web_app/start_server_docker.sh
 
 # Reroute to enable the PrimeDesign CLI and WebApp
-WORKDIR /PrimeDesign
 EXPOSE 9994
-RUN chmod +x /PrimeDesign/web_app/start_server_docker.sh
+USER docker
 ENTRYPOINT ["python", "/PrimeDesign/primedesign_router.py"]

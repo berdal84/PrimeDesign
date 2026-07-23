@@ -3728,8 +3728,9 @@ def run_primedesign(input_check, pbs_range, rtt_range, nicking_distance_range, f
 			for crispritz_spacer in spacers_for_crispritz:
 				if len(crispritz_spacer) == 20:
 					f.write(crispritz_spacer.upper() + 'NNN' + '\n')
-
-		subprocess.call('crispritz.py search /PrimeDesign/hg38_chromosomes/ /PrimeDesign/reports/pam.txt /PrimeDesign/reports/guides_%s.txt crispritz_output_%s -mm 4 -t -scores /PrimeDesign/hg38_chromosomes/' % (session_id, session_id), shell = True)
+					
+		# Note: "conda run -n crispritz" is needed, this package is installed under a different enviroment to be able to use Python==3.8
+		subprocess.call('conda run -n crispritz crispritz.py search /PrimeDesign/hg38_chromosomes/ /PrimeDesign/reports/pam.txt /PrimeDesign/reports/guides_%s.txt crispritz_output_%s -mm 4 -t -scores /PrimeDesign/hg38_chromosomes/' % (session_id, session_id), shell = True)
 
 		crispritz_scores = {}
 		with open('/PrimeDesign/web_app/crispritz_output_%s.scores.txt' % session_id, 'r') as f:
